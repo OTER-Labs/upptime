@@ -1,8 +1,8 @@
 # Upptime configuration for status.oter.io.
 #
 # Copy this file to `.upptimerc.yml` at the root of a repository generated from the Upptime
-# template (https://github.com/upptime/upptime), replacing OWNER_ORG with the GitHub organisation
-# or user that owns that repository. The runbook is deploy/status-page/README.md.
+# template (https://github.com/upptime/upptime). The live copy is https://github.com/OTER-Labs/upptime
+# (created 2026-10-17); edit there and here together. The runbook is deploy/status-page/README.md.
 #
 # Key reference: https://upptime.js.org/docs/configuration/
 #
@@ -103,14 +103,14 @@ sites:
     maxResponseTime: 5000
     __dangerous__body_down_if_text_missing: '"ok":true'
 
-  # Optional: the Stokenet portal. Live today; off by default because it is a testnet service.
-  # - name: idOS portal, Stokenet (idos-stokenet.oter.io)
-  #   slug: oter-idos-stokenet
-  #   url: https://idos-stokenet.oter.io/api/health
-  #   expectedStatusCodes:
-  #     - 200
-  #   maxResponseTime: 5000
-  #   __dangerous__body_down_if_text_missing: '"ok":true'
+  # The idOS portal on Stokenet, the test network. Same app and health route as the mainnet portal.
+  - name: idOS portal, Stokenet (idos-stokenet.oter.io)
+    slug: oter-idos-stokenet
+    url: https://idos-stokenet.oter.io/api/health
+    expectedStatusCodes:
+      - 200
+    maxResponseTime: 5000
+    __dangerous__body_down_if_text_missing: '"ok":true'
 
   # The beacon. Rust service on Railway, two replicas, health check on this path
   # (beacon/railway.json). `get_health` in beacon/src/main.rs answers 503 before its genesis time
