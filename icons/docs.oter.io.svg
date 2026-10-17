@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="OTER Docs">
+  <title>OTER Docs</title>
+  <!-- The OTER mark: a 2x2 tile cluster with one settled (yellow) cell.
+       Accent cell is per-surface: oter.io green, blog blue, random red, docs YELLOW. -->
+  <rect width="64" height="64" fill="#1d150e" />
+  <rect x="8" y="8" width="23" height="23" fill="#f7e8c6" />
+  <rect x="33" y="8" width="23" height="23" fill="#cf9c3d" />
+  <rect x="8" y="33" width="23" height="23" fill="#f7e8c6" />
+  <rect x="33" y="33" width="23" height="23" fill="#f7e8c6" />
+</svg>
