@@ -1,31 +1,142 @@
-# Change these first
-owner: upptime # Your GitHub organization or username, where this repository lives
-repo: upptime # The name of this repository
+# Upptime configuration for status.oter.io.
+#
+# Copy this file to `.upptimerc.yml` at the root of a repository generated from the Upptime
+# template (https://github.com/upptime/upptime), replacing OWNER_ORG with the GitHub organisation
+# or user that owns that repository. The runbook is deploy/status-page/README.md.
+#
+# Key reference: https://upptime.js.org/docs/configuration/
+#
+# Every check runs from GitHub's runners, outside Railway, Cloudflare and the app VM. Each site
+# below states what its check proves and the source the check was read from.
+#
+# Body-text keys (`__dangerous__body_down_if_text_missing`, `__dangerous__body_degraded_if_text_missing`):
+# the site is marked down (or degraded) when the response body does not contain the text.
+# `expectedStatusCodes`: by default every 2xx and 3xx counts as up; [200] refuses a redirect.
+# `maxResponseTime`: a slower answer reads degraded; the default is 30000 ms.
+
+owner: OTER-Labs
+repo: upptime
+# Sent on every GitHub API call Upptime makes; the docs recommend the GitHub username.
+user-agent: OTER-Labs
+
+# GitHub Actions runs a schedule at most every five minutes. This is the template's default, stated
+# so the cadence is visible here.
+workflowSchedule:
+  uptime: "*/5 * * * *"
+
+# No `assignees` key: nobody is assigned to the incident issues Upptime opens.
 
 sites:
-  - name: Google
-    url: https://www.google.com
-  - name: Wikipedia
-    url: https://en.wikipedia.org
-  - name: Hacker News
-    url: https://news.ycombinator.com
-  - name: Secret Site
-    url: $SECRET_SITE
+  # The landing. SvelteKit adapter-node (landing/svelte.config.js) on Railway (landing/README.md,
+  # "Required external setup").
+  # The marker is on the <body> of landing/src/app.html, so a Cloudflare or Railway error page,
+  # which never carries it, reads down.
+  - name: Website (oter.io)
+    slug: oter-website
+    url: https://oter.io/
+    expectedStatusCodes:
+      - 200
+    maxResponseTime: 10000
+    __dangerous__body_down_if_text_missing: "data-sveltekit-preload-data"
+
+  # TODO(owner): the app. Every public link names app.oter.io (commit 25429369), the landing says
+  # the app is not public yet (landing/static/llms.txt), and app.oter.io does not resolve. Enable
+  # this entry at the app.oter.io DNS cut (deploy/containers/README.md, section 7). Same check as
+  # the landing, with the marker the app's own frontend/src/app.html puts on <body>.
+  # The old host, oracle.oter.io, still answered 200 on 2026-10-17 and is not probed: it is no
+  # longer linked, and what it serves now was not checked.
+  # - name: App (app.oter.io)
+  #   slug: oter-app
+  #   url: https://app.oter.io/
+  #   expectedStatusCodes:
+  #     - 200
+  #   maxResponseTime: 10000
+  #   __dangerous__body_down_if_text_missing: "data-sveltekit-prefetch"
+
+  # TODO(owner): the API has no public base yet. It is reached through the app's /api proxy
+  # (frontend/src/hooks.server.ts, active when OTER_API_ORIGIN is set); oracle.oter.io/api/health
+  # answered 404 on 2026-10-17. Enable once app.oter.io/api/health answers.
+  # The handler (backend/src/main.rs, `health`; body from backend/src/health.rs) answers 200
+  # whenever the process is up, so the status code alone proves only that. The body fields are
+  # serialised in struct order, so these substrings appear only when that part is `ok`:
+  #   - database down (sign-in and every write fail): site down;
+  #   - boot not complete, or a module refused (no indexer runs): site degraded.
+  # A 502 from the proxy (`api_upstream_unavailable`) is not 2xx and reads down.
+  # - name: API
+  #   slug: oter-api
+  #   url: https://app.oter.io/api/health
+  #   expectedStatusCodes:
+  #     - 200
+  #   maxResponseTime: 5000
+  #   __dangerous__body_down_if_text_missing: '"database":{"state":"ok"'
+  #   __dangerous__body_degraded_if_text_missing: '"boot":{"state":"ok"'
+
+  # The blog. SvelteKit adapter-node on Railway (blog/railway.json); same <body> marker as the
+  # landing (blog/src/app.html).
+  - name: Blog (blog.oter.io)
+    slug: oter-blog
+    url: https://blog.oter.io/
+    expectedStatusCodes:
+      - 200
+    maxResponseTime: 10000
+    __dangerous__body_down_if_text_missing: "data-sveltekit-preload-data"
+
+  # The docs. Docusaurus served by `docusaurus serve` on Railway (docs-site/railway.json). The
+  # site title in docs-site/docusaurus.config.ts is on every page, in <title> and the navbar.
+  - name: Docs (docs.oter.io)
+    slug: oter-docs
+    url: https://docs.oter.io/
+    expectedStatusCodes:
+      - 200
+    maxResponseTime: 10000
+    __dangerous__body_down_if_text_missing: "OTER Docs"
+
+  # The idOS proof-of-personhood portal, mainnet. Next.js on Railway, two replicas
+  # (idos-pop-app/railway.json uses the same path as its health check). The route
+  # (idos-pop-app/app/api/health/route.ts) answers {"ok":true,"network":...} from the app server
+  # itself, never from a cache.
+  - name: idOS portal (idos.oter.io)
+    slug: oter-idos
+    url: https://idos.oter.io/api/health
+    expectedStatusCodes:
+      - 200
+    maxResponseTime: 5000
+    __dangerous__body_down_if_text_missing: '"ok":true'
+
+  # Optional: the Stokenet portal. Live today; off by default because it is a testnet service.
+  # - name: idOS portal, Stokenet (idos-stokenet.oter.io)
+  #   slug: oter-idos-stokenet
+  #   url: https://idos-stokenet.oter.io/api/health
+  #   expectedStatusCodes:
+  #     - 200
+  #   maxResponseTime: 5000
+  #   __dangerous__body_down_if_text_missing: '"ok":true'
+
+  # The beacon. Rust service on Railway, two replicas, health check on this path
+  # (beacon/railway.json). `get_health` in beacon/src/main.rs answers 503 before its genesis time
+  # and 200 with "status":"ok" after it, with Cache-Control: no-store.
+  - name: Beacon (random.oter.io)
+    slug: oter-beacon
+    url: https://random.oter.io/health
+    expectedStatusCodes:
+      - 200
+    maxResponseTime: 5000
+    __dangerous__body_down_if_text_missing: '"status":"ok"'
+
+  # Not probed: db.oter.io (the database's public endpoint, deploy/containers/Caddyfile) does not
+  # resolve yet. When it does, its /health path is on the Caddy allowlist and needs no credential.
 
 status-website:
-  # Add your custom domain name, or remove the `cname` line if you don't have a domain
-  # Uncomment the `baseUrl` line if you don't have a custom domain and add your repo name there
-  cname: demo.upptime.js.org
-  # baseUrl: /your-repo-name
-  logoUrl: https://raw.githubusercontent.com/upptime/upptime.js.org/master/static/img/icon.svg
-  name: Upptime
-  introTitle: "**Upptime** is the open-source uptime monitor and status page, powered entirely by GitHub."
-  introMessage: This is a sample status page which uses **real-time** data from our [GitHub repository](https://github.com/upptime/upptime). No server required — just GitHub Actions, Issues, and Pages. [**Get your own for free**](https://github.com/upptime/upptime)
+  # Custom domain. Upptime writes the CNAME file into the gh-pages branch. With a custom domain
+  # there is no `baseUrl`.
+  cname: status.oter.io
+  logoUrl: https://oter.io/apple-touch-icon.png
+  name: OTER Status
+  theme: light
+  introTitle: "OTER service status"
+  introMessage: "Each public OTER service is checked every five minutes from GitHub's servers, which run apart from the hosting the services use. A failed check opens an incident on this page, and the incident closes when the service answers again."
   navbar:
     - title: Status
       href: /
-    - title: GitHub
-      href: https://github.com/$OWNER/$REPO
-
-# Upptime also supports notifications, assigning issues, and more
-# See https://upptime.js.org/docs/configuration
+    - title: oter.io
+      href: https://oter.io/
